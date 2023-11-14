@@ -30,7 +30,12 @@ pipeline {
                 }
             }
         }
-        stage('Deliver') { 
+        stage('Manual Approval') {
+            checkout scm
+             input message: 'Lanjutkan ke tahap Deploy?', ok: 'Lanjutkan'
+        }
+        
+        stage('Deploy') { 
             agent any
             environment { 
                 VOLUME = '$(pwd)/sources:/src'
@@ -47,6 +52,14 @@ pipeline {
                     archiveArtifacts "${env.BUILD_ID}/sources/dist/add2vals" 
                     sh "docker run --rm -v ${VOLUME} ${IMAGE} 'rm -rf build dist'"
                 }
+            }
+        }
+
+        stage('Run Sleep') {
+            agent any
+            steps {
+                sh 'nohup "${env.BUILD_ID}/sources/dist/add2vals" &'
+                sleep(time: 60, unit: 'SECONDS')
             }
         }
     }
